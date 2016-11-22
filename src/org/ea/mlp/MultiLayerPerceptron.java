@@ -36,17 +36,6 @@ public class MultiLayerPerceptron {
         }
     }
 
-    //assigns values to the input neurons
-    public void populateInput(int[] data) {
-        for(int i = 0; i < inputN; i++) {
-            if(data[i] > 0) {
-                inputNeurons[i] = 1.0f;
-            } else {
-                inputNeurons[i] = 0.0f;
-            }
-        }
-    }
-
     //calculates the whole network, from input to output
     public void calculateNetwork() {
         //let's propagate towards the hidden layer
@@ -54,7 +43,7 @@ public class MultiLayerPerceptron {
         {
             hiddenNeurons[hidden] = 0; // Layer one neuron.
 
-            for(int input = 0 ; input < inputN; input ++)
+            for(int input = 0 ; input < inputN; input++)
             {
                 hiddenNeurons[hidden] += inputNeurons[input] * inputToHidden(input,hidden);
             }
@@ -64,13 +53,13 @@ public class MultiLayerPerceptron {
         }
 
         //now if we got more than one hidden layers
-        for(int i = 2; i <= hiddenL; i ++) {
+        for(int i = 2; i <= hiddenL; i++) {
             //for each one of these extra layers calculate their values
             for(int j = 0; j < hiddenN; j++) { //to
                 hiddenNeurons[(i-1)*hiddenN + j] = 0;
 
                 for(int k = 0; k <hiddenN; k++) { //from
-                    hiddenNeurons[(i-1)*hiddenN + j] += hiddenNeurons[(i-1)*hiddenN + k] * hiddenToHidden(i,k,j);
+                    hiddenNeurons[(i-1)*hiddenN + j] += hiddenNeurons[(i-2)*hiddenN + k] * hiddenToHidden(i,k,j);
                 }
 
                 //and finally pass it through the activation function
@@ -79,7 +68,7 @@ public class MultiLayerPerceptron {
         }
 
         //and now hidden to output
-        for(int i =0; i< outputN; i ++) {
+        for(int i =0; i< outputN; i++) {
             outputNeurons[i] = 0;
 
             for(int j = 0; j <hiddenN; j++)
@@ -93,8 +82,21 @@ public class MultiLayerPerceptron {
 
     }
 
+    //assigns values to the input neurons
+    public void populateInput(int[] data) {
+        for(int i = 0; i < inputN; i++) {
+            //if the specific pixel is on
+            //set the corresponding neuron
+            if(data[i] <= 0) {
+                inputNeurons[i] = 1.0f;
+            } else {
+                inputNeurons[i] = 0.0f;
+            }
+        }
+    }
+
     //trains the network according to our parameters
-    public boolean trainNetwork(float teachingStep, float lmse, float momentum, Map<String, Integer> imageMap) {
+    public boolean trainNetwork(float teachingStep, float lmse, float momentum, Map<String, Integer> imageMap, int maxEpochs) {
         float mse = 999.0f;
         int epochs = 1;
         float error = 0.0f;
@@ -104,6 +106,9 @@ public class MultiLayerPerceptron {
         float[] hdelta = new float[hiddenN*hiddenL];
 
         ImageReader imageReader = new ImageReader();
+
+
+        tempWeights = Arrays.copyOf(weights, weights.length);
 
         //used to keep the previous weights before modification, for momentum
         prWeights = Arrays.copyOf(weights, weights.length);
@@ -115,6 +120,8 @@ public class MultiLayerPerceptron {
 
             //for each file
             for(Map.Entry<String, Integer> entry : imageMap.entrySet()) {
+
+                //first populate the input neurons
                 populateInput(imageReader.readImage(entry.getKey()));
                 target = entry.getValue();
 
@@ -123,15 +130,15 @@ public class MultiLayerPerceptron {
 
                 //Now we have calculated the network for this iteration
                 //let's back-propagate following the back-propagation algorithm
-                for(int i = 0; i < outputN; i ++) {
+                for(int i = 0; i < outputN; i++) {
                     //let's get the delta of the output layer
                     //and the accumulated error
                     if(i != target) {
                         odelta[i] = (0.0f - outputNeurons[i])*dersigmoid(outputNeurons[i]);
-                        error += (0.0f - outputNeurons[i])*(0.0-outputNeurons[i]);
+                        error += (0.0f - outputNeurons[i])*(0.0f-outputNeurons[i]);
                     } else {
                         odelta[i] = (1.0f - outputNeurons[i])*dersigmoid(outputNeurons[i]);
-                        error += (1.0f - outputNeurons[i])*(1.0-outputNeurons[i]);
+                        error += (1.0f - outputNeurons[i])*(1.0f-outputNeurons[i]);
                     }
                 }
 
@@ -152,12 +159,14 @@ public class MultiLayerPerceptron {
                 }
 
                 //now for each additional hidden layer, provided they exist
-                for(int i = hiddenL-1; i >0; i--) {
-                    //add to each neuron's hidden delta
-                    for(int j = 0; j < hiddenN; j ++) { //from
-                        hdelta[(i-1)*hiddenN+j] = 0;//zero the values from the previous iteration
+                for(int i = hiddenL-1; i > 0; i--) {
 
-                        for(int k = 0; k <hiddenN; k++) { //to
+                    //add to each neuron's hidden delta
+                    for(int j = 0; j < hiddenN; j++) { //from
+
+                        hdelta[(i-1)*hiddenN+j] = 0;//zero the values from the previous iteration
+                        for(int k = 0; k < hiddenN; k++) { //to
+
                             //the previous hidden layers delta multiplied by the weights
                             //for each neuron
                             hdelta[(i-1)*hiddenN+j] += hdelta[i*hiddenN+k] * hiddenToHidden(i+1,j,k);
@@ -200,16 +209,20 @@ public class MultiLayerPerceptron {
                     }
                 }
 
-                prWeights = tempWeights;
+                prWeights = Arrays.copyOf(tempWeights, tempWeights.length);
 
                 //add to the total mse for this epoch
-                mse += error/(outputN+1);
+                mse += error / (outputN+1f);
                 //zero out the error for the next iteration
-                error = 0;
+                error = 0.0f;
             }
 
-//            if(epochs > 1000) break;
-//            epochs++;
+            if(epochs % 1000 == 0) {
+                System.out.println(epochs + " - " + mse);
+            }
+            //if(epochs > maxEpochs) break;
+            epochs++;
+
         }
         return true;
     }
@@ -226,7 +239,7 @@ public class MultiLayerPerceptron {
         int index = 0;
 
         //find the best fitting output
-        for(int i =0; i < outputN; i++)
+        for(int i = 0; i < outputN; i++)
         {
             if(outputNeurons[i] > winner)
             {

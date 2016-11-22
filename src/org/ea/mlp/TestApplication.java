@@ -30,8 +30,8 @@ public class TestApplication {
         imageMap.put("images/img20.bmp", 2);
         imageMap.put("images/img21.bmp", 0);
 
-        MultiLayerPerceptron mlp = new MultiLayerPerceptron(24, 3);
-        if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap)) {
+        MultiLayerPerceptron mlp = new MultiLayerPerceptron(3, 24);
+        if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap, 1000)) {
             System.out.println("There was an error while training ... Quitting\n\r");
             System.exit(0);
         }
@@ -45,7 +45,7 @@ public class TestApplication {
         System.out.println("Max Memory:" + runtime.maxMemory() / mb);
 
         ImageReader ir = new ImageReader();
-        mlp.recallNetwork("images/img19.bmp", ir.readImage("images/img19.bmp"));
+        mlp.recallNetwork("images/img10.bmp", ir.readImage("images/img10.bmp"));
 
         /*
         hiddenNeurons = 24
