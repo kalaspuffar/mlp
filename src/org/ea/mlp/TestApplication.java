@@ -62,7 +62,7 @@ public class TestApplication {
             imageMap.remove(key);
 
             MultiLayerPerceptron mlp = new MultiLayerPerceptron(24, 3);
-            if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap)) {
+            if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap, 10000)) {
                 System.out.println("There was an error while training ... Quitting\n\r");
                 System.exit(0);
             }
@@ -96,6 +96,5 @@ public class TestApplication {
         System.out.println("Total Memory:" + runtime.totalMemory() / mb);
         System.out.println("Max Memory:" + runtime.maxMemory() / mb);
 */
-
     }
 }
