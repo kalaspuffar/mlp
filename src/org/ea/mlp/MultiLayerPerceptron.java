@@ -2,6 +2,7 @@ package org.ea.mlp;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 
 public class MultiLayerPerceptron {
     float[] inputNeurons;
@@ -16,8 +17,9 @@ public class MultiLayerPerceptron {
 
     int inputN,outputN,hiddenN,hiddenL;
 
-    public MultiLayerPerceptron(int hiddenL, int hiddenN) {
+    public MultiLayerPerceptron(int hiddenN, int hiddenL) {
         outputN = 10; //the 9 possible numbers and zero
+        inputN = 64;
         this.hiddenL = hiddenL;
         this.hiddenN = hiddenN;
 
@@ -31,8 +33,10 @@ public class MultiLayerPerceptron {
         hiddenNeurons = new float[hiddenN*hiddenL];
         outputNeurons = new float[outputN];
 
+        Random rn = new Random();
+        rn.setSeed(System.currentTimeMillis());
         for(int i = 0; i < weightsSize; i++) {
-            weights[i] = (float)(Math.random() - 0.5f);
+            weights[i] = (rn.nextFloat() - 0.5f);
         }
     }
 
@@ -70,7 +74,7 @@ public class MultiLayerPerceptron {
                 hiddenNeurons[(i-1)*hiddenN + j] = 0;
 
                 for(int k = 0; k <hiddenN; k++) { //from
-                    hiddenNeurons[(i-1)*hiddenN + j] += hiddenNeurons[(i-1)*hiddenN + k] * hiddenToHidden(i,k,j);
+                    hiddenNeurons[(i-1)*hiddenN + j] += hiddenNeurons[(i-2)*hiddenN + k] * hiddenToHidden(i,k,j);
                 }
 
                 //and finally pass it through the activation function
@@ -200,7 +204,7 @@ public class MultiLayerPerceptron {
                     }
                 }
 
-                prWeights = tempWeights;
+                prWeights = Arrays.copyOf(tempWeights, tempWeights.length);;
 
                 //add to the total mse for this epoch
                 mse += error/(outputN+1);
@@ -208,14 +212,16 @@ public class MultiLayerPerceptron {
                 error = 0;
             }
 
-//            if(epochs > 1000) break;
-//            epochs++;
+            if(epochs % 1000 == 0) {
+                System.out.println(mse);
+            }
+            epochs++;
         }
         return true;
     }
 
     //recalls the network for a given bitmap file
-    public void recallNetwork(String filename, int[] data) {
+    public int recallNetwork(String filename, int[] data, int answer) {
         //first populate the input neurons
         populateInput(data);
 
@@ -236,9 +242,11 @@ public class MultiLayerPerceptron {
         }
 
         //output it
-        System.out.println("The neural network thinks that image " + filename + " represents a \n\r\n\r \t\t----->| " + index + " |<------\t\t \n\r\n\r");
+//        System.out.println("The neural network thinks that image " + filename + " with the correct answer "+answer+" represents a \n\r\n\r \t\t----->| " + index + " |<------\t\t \n\r\n\r");
 
+        System.out.println("The neural network thinks that image " + filename + " with the correct answer "+answer+" represents a " + index);
         //now let's the exact percentages of what it thanks
+/*
         System.out.println(
                 "Analyzing what the network thinks about bitmap " + filename + " we see that it thinks it is: \n\r" +
                 "| 0 with " + (int)(outputNeurons[0]*100) + " probability |\n\r" +
@@ -251,6 +259,8 @@ public class MultiLayerPerceptron {
                 "| 7 with " + (int)(outputNeurons[7]*100) + " probability |\n\r" +
                 "| 8 with " + (int)(outputNeurons[8]*100) + " probability |\n\r" +
                 "| 9 with " + (int)(outputNeurons[9]*100) + " probability |\n\r");
+*/
+        return index == answer ? 1 : 0;
     }
 
     private float inputToHidden(int inp, int hid) {
