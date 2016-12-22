@@ -1,5 +1,9 @@
 package org.ea.mlp;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
@@ -40,6 +44,49 @@ public class MultiLayerPerceptron {
         rn.setSeed(System.currentTimeMillis());
         for(int i = 0; i < weightsSize; i++) {
             weights[i] = (rn.nextFloat() - 0.5f);
+        }
+    }
+
+    public void save(String filename) {
+        //WRITE
+        try {
+            RandomAccessFile aFile = new RandomAccessFile(filename, "rw");
+            FileChannel outChannel = aFile.getChannel();
+
+            //one float 4 bytes
+            ByteBuffer buf = ByteBuffer.allocate(4 * (hiddenNeurons.length + weights.length));
+            buf.clear();
+            buf.asFloatBuffer().put(hiddenNeurons);
+            buf.asFloatBuffer().put(weights);
+
+            while (buf.hasRemaining()) {
+                outChannel.write(buf);
+            }
+
+            outChannel.close();
+        } catch (IOException ex) {
+            System.err.println(ex.getMessage());
+        }
+    }
+
+
+    public void load(String filename) {
+        try {
+            RandomAccessFile rFile = new RandomAccessFile(filename, "rw");
+            FileChannel inChannel = rFile.getChannel();
+            ByteBuffer buf_in = ByteBuffer.allocate(4 * (hiddenNeurons.length + weights.length));
+            buf_in.clear();
+
+            inChannel.read(buf_in);
+
+            buf_in.rewind();
+            buf_in.asFloatBuffer().get(hiddenNeurons);
+            buf_in.asFloatBuffer().get(weights);
+
+            inChannel.close();
+
+        } catch (IOException ex) {
+            System.err.println(ex.getMessage());
         }
     }
 

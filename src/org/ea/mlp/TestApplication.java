@@ -56,6 +56,8 @@ public class TestApplication {
         Collections.sort(keys);
 
         int correct = 0;
+
+        /*
         for(String key : keys) {
 
             int answer = imageMap.get(key);
@@ -71,20 +73,25 @@ public class TestApplication {
 
             imageMap.put(key, answer);
         }
+        */
 
-/*
+
         MultiLayerPerceptron mlp = new MultiLayerPerceptron(24, 3);
-        if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap)) {
+        if(!mlp.trainNetwork(0.04f, 0.01f, 0.4f, imageMap, 10000)) {
             System.out.println("There was an error while training ... Quitting\n\r");
             System.exit(0);
         }
 
+        mlp.save("test.data");
+
+        MultiLayerPerceptron mlp2 = new MultiLayerPerceptron(24, 3);
+        mlp2.load("test.data");
+
         for(String key : keys) {
             int answer = imageMap.get(key);
             ImageReader ir = new ImageReader();
-            correct += mlp.recallNetwork(key, ir.readImage(key), answer);
+            correct += mlp2.recallNetwork(key, ir.readImage(key), answer);
         }
-*/
         System.out.println(correct + " / 22");
 
 /*
