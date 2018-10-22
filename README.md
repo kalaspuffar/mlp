@@ -1,4 +1,4 @@
-# Multi Layer Perceptron (WIP)
+# Multi Layer Perceptron
 
 Trying to reimplement the tutorial at [blog.refu.co/?p=931](blog.refu.co/?p=931).
 
